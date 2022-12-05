@@ -1,16 +1,15 @@
 const app = require('express')();
 const express = require('express');
-const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
 const path = require('path');
-const routes = require('../routes');
 const connectDb = require('../config/db');
-
-app.use(express.json());
-app.use(cookieParser());
-app.use(morgan('dev'));
+const routes = require('./routes');
+const middlewares = require('./middlewares');
+const { notFoundErrorHandler, globalErrorHandler } = require('./error');
 
 connectDb();
+
+// middlewares
+app.use(middlewares);
 
 // Static file folder serve
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
@@ -19,12 +18,6 @@ app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
 app.use('/api', routes);
 
 // Error Handlers
-app.use((error, req, res, _next) => {
-    if (!error.statusCode) {
-        error.statusCode = 500;
-    }
-    const { message } = error;
-    res.status(error.statusCode).json({ message });
-});
+app.use([notFoundErrorHandler, globalErrorHandler]);
 
 module.exports = app;
