@@ -1,3 +1,4 @@
+/* eslint-disable func-names */
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -15,6 +16,7 @@ const userSchema = mongoose.Schema(
             unique: true,
             lowercase: true,
         },
+        role: [{ type: String, default: 'user', enum: ['user', 'admin', 'editor'] }],
         password: {
             type: String,
             required: true,
@@ -24,7 +26,7 @@ const userSchema = mongoose.Schema(
             default: 'https://i.pinimg.com/originals/7d/34/d9/7d34d9d53640af5cfd2614c57dfa7f13.png',
         },
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 userSchema.pre('save', async function (next) {

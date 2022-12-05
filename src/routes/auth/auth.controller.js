@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { generateAccessToken, generateRefreshToken } = require('../../lib/jwt');
 const createAsyncError = require('../../middlewares/createAsyncError');
 const User = require('../../models/User.model');
@@ -8,9 +9,9 @@ const User = require('../../models/User.model');
 // @access Register a user
 
 const register = createAsyncError(async (req, res) => {
-    const { name, email, password, profile } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email || !password || !profile) {
+    if (!name || !email || !password) {
         return res.status(400).json({ message: 'All the fields are required' });
     }
 
@@ -40,6 +41,12 @@ const login = createAsyncError(async (req, res) => {
 
     if (!isEmailExitsOrNot) {
         return res.status(500).json({ message: 'User not exists' });
+    }
+
+    const match = await bcrypt.compare(password, isEmailExitsOrNot.password);
+
+    if (!match) {
+        return res.status(402).json({ message: 'Wrong password' });
     }
 
     const createdAccessToken = generateAccessToken(isEmailExitsOrNot._id);
@@ -82,4 +89,23 @@ const refresh = createAsyncError(async (req, res) => {
     res.json({ token: newAccessToken });
 });
 
-module.exports = { register, login, refresh };
+// @desc Logout
+// @route POST api/auth/logout
+// @access logout the user and clear the cookie
+
+const logout = createAsyncError((req, res) => {
+    const { cookies } = req;
+
+    if (!cookies.token) {
+        return res.statusCode(200);
+    }
+
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+    });
+
+    return res.status(200).json({ message: 'Cookie has been cleared' });
+});
+module.exports = { register, login, refresh, logout };
